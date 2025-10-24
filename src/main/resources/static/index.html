@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>导盲犬仪表板</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 2.5em;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .card-title {
+            color: #333;
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            font-weight: 600;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .image-container {
+            width: 100%;
+            height: 400px;
+            background: #f0f0f0;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .image-placeholder {
+            color: #999;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .controls {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 20px;
+        }
+
+        .control-section {
+            margin-bottom: 20px;
+        }
+
+        .control-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .section-title {
+            color: #333;
+            font-size: 1.1em;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            transition: background 0.3s;
+        }
+
+        .button:hover {
+            background: #764ba2;
+        }
+
+        .button.secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .button.secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .button.danger {
+            background: #f44336;
+        }
+
+        .button.danger:hover {
+            background: #da190b;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-indicator.active {
+            background: #4caf50;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.inactive {
+            background: #f44336;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .status-item {
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .ws-status {
+            padding: 15px;
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+
+        .ws-status.connected {
+            background: #e8f5e9;
+            border-left-color: #4caf50;
+        }
+
+        .log-box {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 12px;
+            height: 150px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #333;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐕 导盲犬仪表板 - 实时图像监控</h1>
+
+        <div class="dashboard">
+            <div class="card">
+                <div class="card-title">📡 雷达图像</div>
+                <div class="image-container" id="radarContainer">
+                    <div class="image-placeholder">
+                        <div class="loading-spinner" style="margin: 0 auto 10px;"></div>
+                        <p>等待雷达图像...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">📷 摄像头图像</div>
+                <div class="image-container" id="cameraContainer">
+                    <div class="image-placeholder">
+                        <div class="loading-spinner" style="margin: 0 auto 10px;"></div>
+                        <p>等待摄像头图像...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="control-section">
+                <div class="section-title">WebSocket 连接状态</div>
+                <div id="wsStatus" class="ws-status">
+                    <span class="status-indicator inactive"></span>
+                    <span id="wsStatusText">未连接</span>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <div class="section-title">🎮 控制面板</div>
+                <button class="button" onclick="connectWebSocket()">连接 WebSocket</button>
+                <button class="button secondary" onclick="disconnectWebSocket()">断开连接</button>
+                <button class="button" onclick="startImageStreaming()">启动图像推送</button>
+                <button class="button danger" onclick="stopImageStreaming()">停止图像推送</button>
+                <button class="button secondary" onclick="clearLogs()">清空日志</button>
+            </div>
+
+            <div class="control-section">
+                <div class="section-title">📊 系统状态</div>
+                <div class="status-item">
+                    WebSocket 连接: <span id="wsConnStatus">❌ 已断开</span>
+                </div>
+                <div class="status-item">
+                    图像推送: <span id="imageStreamStatus">⏸️ 已停止</span>
+                </div>
+                <div class="status-item">
+                    接收的图像帧: <span id="frameCount">0</span>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <div class="section-title">📝 系统日志</div>
+                <div class="log-box" id="logBox">系统就绪，等待连接...\n</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let imageStreamingActive = false;
+        let frameCount = 0;
+        const logBox = document.getElementById('logBox');
+        const wsStatusElement = document.getElementById('wsStatus');
+        const wsStatusText = document.getElementById('wsStatusText');
+        const wsConnStatus = document.getElementById('wsConnStatus');
+        const imageStreamStatus = document.getElementById('imageStreamStatus');
+        const frameCountElement = document.getElementById('frameCount');
+        const radarContainer = document.getElementById('radarContainer');
+        const cameraContainer = document.getElementById('cameraContainer');
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString('zh-CN');
+            const logEntry = `[${timestamp}] ${message}\n`;
+            logBox.textContent += logEntry;
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        function clearLogs() {
+            logBox.textContent = '日志已清空\n';
+        }
+
+        function updateStatus() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                wsStatusElement.className = 'ws-status connected';
+                wsStatusText.textContent = '✅ 已连接';
+                wsConnStatus.textContent = '✅ 已连接';
+            } else {
+                wsStatusElement.className = 'ws-status';
+                wsStatusText.textContent = '❌ 未连接';
+                wsConnStatus.textContent = '❌ 已断开';
+            }
+        }
+
+        function connectWebSocket() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                log('⚠️ WebSocket 已经连接');
+                return;
+            }
+
+            try {
+                const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+                const wsUrl = `${protocol}://${window.location.host}/ws/image`;
+                log(`🔗 正在连接到: ${wsUrl}`);
+
+                ws = new WebSocket(wsUrl);
+
+                ws.onopen = function() {
+                    log('✅ WebSocket 连接成功');
+                    updateStatus();
+                };
+
+                ws.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        if (data.type === 'radar') {
+                            radarContainer.innerHTML = `<img src="data:image/jpeg;base64,${data.data}" alt="Radar Image">`;
+                            frameCount++;
+                        } else if (data.type === 'camera') {
+                            cameraContainer.innerHTML = `<img src="data:image/jpeg;base64,${data.data}" alt="Camera Image">`;
+                            frameCount++;
+                        }
+                        frameCountElement.textContent = frameCount;
+                    } catch (error) {
+                        console.error('Error parsing image data:', error);
+                    }
+                };
+
+                ws.onerror = function(error) {
+                    log(`❌ WebSocket 错误: ${error}`);
+                    updateStatus();
+                };
+
+                ws.onclose = function() {
+                    log('⚠️ WebSocket 已断开连接');
+                    updateStatus();
+                };
+            } catch (error) {
+                log(`❌ 连接失败: ${error.message}`);
+            }
+        }
+
+        function disconnectWebSocket() {
+            if (ws) {
+                ws.close();
+                log('✅ WebSocket 已断开');
+                updateStatus();
+            } else {
+                log('⚠️ WebSocket 未连接');
+            }
+        }
+
+        function startImageStreaming() {
+            fetch('/api/image/start', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        log('✅ 图像推送已启动');
+                        imageStreamingActive = true;
+                        imageStreamStatus.textContent = '▶️ 推送中';
+                    } else {
+                        log(`❌ 启动失败: ${data.message}`);
+                    }
+                })
+                .catch(error => {
+                    log(`❌ 请求失败: ${error.message}`);
+                });
+        }
+
+        function stopImageStreaming() {
+            fetch('/api/image/stop', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        log('✅ 图像推送已停止');
+                        imageStreamingActive = false;
+                        imageStreamStatus.textContent = '⏸️ 已停止';
+                    } else {
+                        log(`❌ 停止失败: ${data.message}`);
+                    }
+                })
+                .catch(error => {
+                    log(`❌ 请求失败: ${error.message}`);
+                });
+        }
+
+        // 页面加载时更新状态
+        window.addEventListener('load', function() {
+            updateStatus();
+            log('🚀 仪表板已加载，请连接 WebSocket');
+        });
+    </script>
+</body>
+</html>
+

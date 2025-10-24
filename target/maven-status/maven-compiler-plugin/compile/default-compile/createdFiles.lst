@@ -1,0 +1,12 @@
+com\guidingdog\http\VideoProxyController.class
+com\javaweb_study\guidingdog_dashboard_web\http\ImageController.class
+com\guidingdog\http\HealthController.class
+com\javaweb_study\guidingdog_dashboard_web\ws\ImageStreamHandler.class
+com\javaweb_study\guidingdog_dashboard_web\service\ImageSubscriptionService.class
+com\guidingdog\http\VideoProxyController$UriBuilder.class
+com\javaweb_study\guidingdog_dashboard_web\service\ImageSubscriptionService$1.class
+com\javaweb_study\guidingdog_dashboard_web\service\ImageSubscriptionService$2.class
+com\javaweb_study\guidingdog_dashboard_web\ws\RosbridgeProxyHandler.class
+com\javaweb_study\guidingdog_dashboard_web\GuidingdogDashboardWebApplication.class
+com\javaweb_study\guidingdog_dashboard_web\ws\WebSocketConfig.class
+com\javaweb_study\guidingdog_dashboard_web\ws\RosbridgeProxyHandler$1.class
